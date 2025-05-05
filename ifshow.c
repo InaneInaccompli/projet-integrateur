@@ -23,8 +23,24 @@ void display_interface_info(const char *interface_name) {
 
             if (ifa->ifa_addr->sa_family == AF_INET) {
                 struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
+                struct sockaddr_in *netmask = (struct sockaddr_in *) ifa->ifa_netmask;
                 char ip_address[INET_ADDRSTRLEN];
                 inet_ntop(AF_INET, &sa->sin_addr, ip_address, sizeof(ip_address));
+
+                // Convertit le netmask en nombre
+                uint32_t mask = ntohl(netmask->sin_addr.s_addr);
+                int cidr = 0;
+                /*
+                * On parcourt tous les bits du mask un par un de gauche à droite jusqu'à arriver à 0
+                * Exemple : 11111111 11111111 11111111 00000000
+                * Pour chaque bit à 1, on incrémente notre compteur (le CIDR) qui sera par la suite affiché
+                * à côté de l'adresse
+                */
+                while (mask & 0x80000000) {
+                    cidr++;
+                    mask <<= 1;
+                }
+                
                 printf("IPv4 Address: %s\n", ip_address);
             } else if (ifa->ifa_addr->sa_family == AF_INET6) {
                 struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *) ifa->ifa_addr;
